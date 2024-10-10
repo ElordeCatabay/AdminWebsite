@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { firestore } from './firebaseConfig';
 import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore'; // Ensure these are imported
 import './index.css';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 
 const AdminDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -89,6 +90,11 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <h1>Admin Dashboard</h1>
+
+      {/* Navigation link to the Post Product page */}
+      <Link to="/post-product">
+        <button className="post-product-btn">Post New Product</button>
+      </Link>
 
       {/* Pending Orders Table */}
       <h2>Pending Orders</h2>
