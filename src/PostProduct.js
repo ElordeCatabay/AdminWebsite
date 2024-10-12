@@ -1,105 +1,107 @@
 import React, { useState } from 'react';
+import { firestore, storage } from './firebaseConfig'; // Adjust to your file path
+import { collection, addDoc } from 'firebase/firestore'; // Firestore functions
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Storage functions
+import { v4 as uuidv4 } from 'uuid'; // For generating unique filenames for images
 
 const PostProduct = () => {
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [productDescription, setProductDescription] = useState('');
-  const [productImage, setProductImage] = useState(null);
+  const [productCategory, setProductCategory] = useState(''); // New state for category
+  const [productImage, setProductImage] = useState(null); // Stores the file object
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleImageChange = (event) => {
-    setProductImage(event.target.files[0]);
+    setProductImage(event.target.files[0]); // Save the file object
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Create a FormData object to send the data
-    const formData = new FormData();
-    formData.append('name', productName);
-    formData.append('price', productPrice);
-    formData.append('description', productDescription);
-    if (productImage) {
-      formData.append('image', productImage);
+    if (!productName || !productPrice || !productDescription || !productCategory || !productImage) {
+      setErrorMessage('Please fill out all fields, including an image.');
+      return;
     }
 
     try {
-      // Replace with your API endpoint
-      const response = await fetch('https://your-api-url.com/products', {
-        method: 'POST',
-        body: formData,
-      });
+      const imageFileName = `${uuidv4()}_${productImage.name}`;
+      const imageRef = ref(storage, `productImages/${imageFileName}`);
 
-      if (response.ok) {
-        setSuccessMessage('Product posted successfully!');
-        // Reset form fields after successful submission
-        setProductName('');
-        setProductPrice('');
-        setProductDescription('');
-        setProductImage(null);
-      } else {
-        throw new Error('Failed to post product');
-      }
+      // Upload the image to Firebase Storage
+      await uploadBytes(imageRef, productImage);
+      const imageUrl = await getDownloadURL(imageRef);
+
+      const productData = {
+        name: productName,
+        price: parseFloat(productPrice),
+        description: productDescription,
+        category: productCategory, // Store the category in Firestore
+        imageUrl, // Store the image URL in Firestore
+      };
+
+      await addDoc(collection(firestore, 'products'), productData);
+
+      setSuccessMessage('Product posted successfully!');
+      setProductName('');
+      setProductPrice('');
+      setProductDescription('');
+      setProductCategory(''); // Reset category field
+      setProductImage(null);
+      setErrorMessage('');
     } catch (error) {
-      alert(error.message);
+      console.error('Error posting product:', error);
+      setErrorMessage('Failed to post product: ' + error.message);
+      setSuccessMessage('');
     }
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Post Product</h1>
-      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+    <div>
+      <h1>Post a New Product</h1>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>
-            Product Name:
-            <input
-              type="text"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              required
-              style={{ marginLeft: '10px' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label>
-            Product Price:
-            <input
-              type="number"
-              value={productPrice}
-              onChange={(e) => setProductPrice(e.target.value)}
-              required
-              style={{ marginLeft: '10px' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label>
-            Product Description:
-            <textarea
-              value={productDescription}
-              onChange={(e) => setProductDescription(e.target.value)}
-              required
-              style={{ marginLeft: '10px', width: '100%', height: '80px' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label>
-            Product Image:
-            <input
-              type="file"
-              onChange={handleImageChange}
-              required
-              style={{ marginLeft: '10px' }}
-            />
-          </label>
-        </div>
-        <button type="submit" style={{ padding: '10px 15px' }}>
-          Submit
-        </button>
+        <input
+          type="text"
+          placeholder="Product Name"
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
+          required
+        />
+        <input
+          type="number"
+          placeholder="Product Price (₱)"
+          value={productPrice}
+          onChange={(e) => setProductPrice(e.target.value)}
+          required
+        />
+        <select
+          value={productCategory}
+          onChange={(e) => setProductCategory(e.target.value)}
+          required
+        >
+          <option value="">Select Category</option>
+          <option value="All">All</option>
+          <option value="Starter Pack">Starter Pack</option>
+          <option value="Beverages">Beverages</option>
+          {/* Add more categories as needed */}
+        </select>
+        <textarea
+          placeholder="Product Description"
+          value={productDescription}
+          onChange={(e) => setProductDescription(e.target.value)}
+          required
+        />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          required
+        />
+        <button type="submit">Post Product</button>
       </form>
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
     </div>
   );
 };
