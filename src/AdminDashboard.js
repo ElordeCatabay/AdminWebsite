@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { firestore } from './firebaseConfig';
-import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore'; // Ensure these are imported
+import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import './index.css';
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 

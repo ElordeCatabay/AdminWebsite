@@ -1,9 +1,8 @@
 // src/firebaseConfig.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage'; // Import Firebase Storage
+import { getStorage } from 'firebase/storage';
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDa2YV_Gkd0FmZl6Ba-RzT_6MXl4VgWPR4",
   authDomain: "sari-sari-store-ee5a6.firebaseapp.com",
@@ -13,14 +12,8 @@ const firebaseConfig = {
   appId: "1:631953152475:web:c32b5b136abcef4fb92ffe"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firestore
 const firestore = getFirestore(app);
+const storage = getStorage(app);
 
-// Initialize Firebase Storage
-const storage = getStorage(app); // Initialize storage
-
-// Export Firestore and Storage
 export { firestore, storage };
