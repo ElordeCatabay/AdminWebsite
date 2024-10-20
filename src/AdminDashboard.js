@@ -28,6 +28,9 @@ const AdminDashboard = () => {
               const user = usersList.find(user => user.id === order.userId);
               const createdAt = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'Date not available';
 
+              // Calculate total price for each order
+              const totalPrice = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
               return {
                 id: order.id,
                 ...order,
@@ -35,6 +38,7 @@ const AdminDashboard = () => {
                 userAddress: order.address || 'Unknown Address',
                 date: createdAt,
                 description: order.items[0]?.description || 'No description available',
+                totalPrice, // Add total price to each order
               };
             });
 
@@ -107,6 +111,7 @@ const AdminDashboard = () => {
             <th>Address</th>
             <th>Items</th>
             <th>Payment Method</th>
+            <th>Total Price</th> {/* Add Total Price column */}
             <th>Status</th>
             <th>Description</th>
             <th>Action</th>
@@ -118,9 +123,21 @@ const AdminDashboard = () => {
               <td>{order.id}</td>
               <td>{order.date}</td>
               <td>{order.username}</td>
-              <td>{order.userAddress}</td>
+              {/* Add Google Maps link for the address */}
+              <td>
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.userAddress)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {order.userAddress}
+                </a>
+              </td>
               <td>{order.items.map(item => item.name).join(', ')}</td>
               <td>{order.paymentMethod}</td>
+              <td>
+                {order.items.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+              </td>
               <td>{order.status}</td>
               <td>{order.description}</td>
               <td>
@@ -129,7 +146,7 @@ const AdminDashboard = () => {
             </tr>
           )) : (
             <tr>
-              <td colSpan="9">No pending orders</td>
+              <td colSpan="10">No pending orders</td>
             </tr>
           )}
         </tbody>
@@ -146,6 +163,7 @@ const AdminDashboard = () => {
             <th>Address</th>
             <th>Items</th>
             <th>Payment Method</th>
+            <th>Total Price</th> {/* Add Total Price column */}
             <th>Status</th>
             <th>Description</th>
             <th>Action</th>
@@ -157,16 +175,28 @@ const AdminDashboard = () => {
               <td>{order.id}</td>
               <td>{order.date}</td>
               <td>{order.username}</td>
-              <td>{order.userAddress}</td>
+              {/* Add Google Maps link for the address */}
+              <td>
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.userAddress)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {order.userAddress}
+                </a>
+              </td>
               <td>{order.items.map(item => item.name).join(', ')}</td>
               <td>{order.paymentMethod}</td>
+              <td>
+                {order.items.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+              </td>
               <td>{order.status}</td>
               <td>{order.description}</td>
               <td><button disabled>Delivered</button></td>
             </tr>
           )) : (
             <tr>
-              <td colSpan="9">No delivered orders</td>
+              <td colSpan="10">No delivered orders</td>
             </tr>
           )}
         </tbody>
