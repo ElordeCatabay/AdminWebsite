@@ -13,24 +13,24 @@ const AdminDashboard = () => {
     const fetchData = () => {
       setLoading(true);
       setError(null);
-
+  
       try {
         const ordersCollection = collection(firestore, 'orders');
         const usersCollection = collection(firestore, 'users');
-
+  
         const unsubscribeOrders = onSnapshot(ordersCollection, (ordersSnapshot) => {
           const ordersList = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+  
           const unsubscribeUsers = onSnapshot(usersCollection, (usersSnapshot) => {
             const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+  
             const enrichedOrders = ordersList.map(order => {
               const user = usersList.find(user => user.id === order.userId);
               const createdAt = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'Date not available';
-
+  
               // Calculate total price for each order
               const totalPrice = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
+  
               return {
                 id: order.id,
                 ...order,
@@ -39,26 +39,31 @@ const AdminDashboard = () => {
                 date: createdAt,
                 description: order.items[0]?.description || 'No description available',
                 totalPrice, // Add total price to each order
+                createdAt: order.createdAt, // Preserve the createdAt field for sorting
               };
             });
-
+  
+            // Sort orders by createdAt in descending order
+            enrichedOrders.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+  
             setOrders(enrichedOrders);
             setLoading(false);
           });
-
+  
           return () => {
             unsubscribeUsers();
           };
         });
-
+  
       } catch (error) {
         setError(error.message);
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, []);
+  
 
   const markAsDelivered = async (orderId) => {
     const confirm = window.confirm("Are you sure you want to mark this order as delivered?");
