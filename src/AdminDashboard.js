@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { firestore } from './firebaseConfig';
 import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import './index.css';
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -13,24 +13,27 @@ const AdminDashboard = () => {
     const fetchData = () => {
       setLoading(true);
       setError(null);
-  
+
       try {
         const ordersCollection = collection(firestore, 'orders');
         const usersCollection = collection(firestore, 'users');
-  
+        
+        const deliveryFee = 80; // Define the delivery fee
+
         const unsubscribeOrders = onSnapshot(ordersCollection, (ordersSnapshot) => {
           const ordersList = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  
+
           const unsubscribeUsers = onSnapshot(usersCollection, (usersSnapshot) => {
             const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  
+
             const enrichedOrders = ordersList.map(order => {
               const user = usersList.find(user => user.id === order.userId);
               const createdAt = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'Date not available';
-  
-              // Calculate total price for each order
-              const totalPrice = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
+
+              // Calculate total price for each order and add delivery fee
+              const itemsTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const totalPrice = itemsTotal + deliveryFee;
+
               return {
                 id: order.id,
                 ...order,
@@ -38,32 +41,31 @@ const AdminDashboard = () => {
                 userAddress: order.address || 'Unknown Address',
                 date: createdAt,
                 description: order.items[0]?.description || 'No description available',
-                totalPrice, // Add total price to each order
+                totalPrice, // Total price with delivery fee included
                 createdAt: order.createdAt, // Preserve the createdAt field for sorting
               };
             });
-  
+
             // Sort orders by createdAt in descending order
             enrichedOrders.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-  
+
             setOrders(enrichedOrders);
             setLoading(false);
           });
-  
+
           return () => {
             unsubscribeUsers();
           };
         });
-  
+
       } catch (error) {
         setError(error.message);
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
   const markAsDelivered = async (orderId) => {
     const confirm = window.confirm("Are you sure you want to mark this order as delivered?");
@@ -116,7 +118,7 @@ const AdminDashboard = () => {
             <th>Address</th>
             <th>Items</th>
             <th>Payment Method</th>
-            <th>Total Price</th> {/* Add Total Price column */}
+            <th>Total Price</th>
             <th>Status</th>
             <th>Description</th>
             <th>Action</th>
@@ -128,7 +130,6 @@ const AdminDashboard = () => {
               <td>{order.id}</td>
               <td>{order.date}</td>
               <td>{order.username}</td>
-              {/* Add Google Maps link for the address */}
               <td>
                 <a 
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.userAddress)}`} 
@@ -140,9 +141,7 @@ const AdminDashboard = () => {
               </td>
               <td>{order.items.map(item => item.name).join(', ')}</td>
               <td>{order.paymentMethod}</td>
-              <td>
-                {order.items.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
-              </td>
+              <td>{order.totalPrice.toFixed(2)}</td> {/* Display updated Total Price */}
               <td>{order.status}</td>
               <td>{order.description}</td>
               <td>
@@ -168,7 +167,7 @@ const AdminDashboard = () => {
             <th>Address</th>
             <th>Items</th>
             <th>Payment Method</th>
-            <th>Total Price</th> {/* Add Total Price column */}
+            <th>Total Price</th>
             <th>Status</th>
             <th>Description</th>
             <th>Action</th>
@@ -180,7 +179,6 @@ const AdminDashboard = () => {
               <td>{order.id}</td>
               <td>{order.date}</td>
               <td>{order.username}</td>
-              {/* Add Google Maps link for the address */}
               <td>
                 <a 
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.userAddress)}`} 
@@ -192,9 +190,7 @@ const AdminDashboard = () => {
               </td>
               <td>{order.items.map(item => item.name).join(', ')}</td>
               <td>{order.paymentMethod}</td>
-              <td>
-                {order.items.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
-              </td>
+              <td>{order.totalPrice.toFixed(2)}</td> {/* Display updated Total Price */}
               <td>{order.status}</td>
               <td>{order.description}</td>
               <td><button disabled>Delivered</button></td>
